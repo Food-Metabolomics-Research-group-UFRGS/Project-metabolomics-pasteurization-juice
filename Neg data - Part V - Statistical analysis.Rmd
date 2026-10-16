@@ -1,0 +1,1084 @@
+---
+title: "Statistical analysis - Negative ionization mode - Study II"
+author: "Giovana Domeneghini Mercali"
+format: gfm
+---
+
+# Load libraries
+```{r, message = FALSE, warning = FALSE}
+library(factoextra) # visualizing PCA results
+library(glue) # for easy pasting
+library(plotly) # quick interactive plots
+library(proxyC) # more efficient large matrices
+library(data.table) # easy transposing
+library(janitor) # for cleaning names and checking duplicates
+library(notame) # for collapsing ions coming from the same metabolite
+library(doParallel) # for parallelizing notame specifically
+library(patchwork) # for making multi-panel plots
+library(rstatix) # for additional univariate functionality
+library(readxl)
+library(svglite)
+library(scales)  # para função `seq_gradient_pal()
+library(openxlsx)
+library(pheatmap) # for heínsatmaps
+
+# this is at the end hoping that the default select will be that from dplyr
+library(tidyverse) # for everything
+
+```
+
+
+# Read in data
+
+Negative mode.
+
+```{r}
+# read in metabolomics data
+feature_table_long_log2 <- read_csv("Processed_data/feature_table_long_log2_neg.csv") 
+
+feature_table_wide_log2 <- read_csv("Processed_data/feature_table_wide_log2_neg.csv") 
+
+# read in meta data - names of the experiments were changed to be more organized.
+metadata <- read_csv("Data/metadata.csv",
+                  trim_ws = TRUE)
+
+# read in meta data
+annotation <- read_csv("Data/Annotation_neg.csv", 
+                  locale=locale(encoding = "latin1"))
+```
+
+# Boxplots
+
+
+```{r}
+feature_table_long_log2_final <- feature_table_long_log2
+```
+
+```{r}
+boxplot_log2_transformed <- feature_table_long_log2_final %>%
+  ggplot(aes(x = sample_name, y = rel_abund, fill = treatment)) +
+  geom_boxplot(alpha = 0.6) +
+  theme_classic(base_size = 12) +
+   theme(
+    legend.position = "right",
+    panel.border = element_rect(color = "black", fill = NA, linewidth = 0.8)  # Adiciona borda completa
+  ) +
+  theme(axis.text.x = element_text(angle = 90)) +
+  scale_fill_manual(values = c("UJ" = "#6A3D9A",
+                                "P76" = "#2E86C1",
+                                "P85" = "#EB984E",
+                                "P95" = "#42846B",
+                                "QC" = "#B2BABB")) +
+  labs(y = "Relative abundance", x = "Sample", 
+  title = "LC-MS (+) feature abundances by Sample",
+       subtitle = "Data is log2 transformed")
+
+
+boxplot_log2_transformed
+
+```
+
+
+
+We can also look at this data by run order to see if we have any overall run order effects visible.
+
+```{r}
+boxplot_log2_transformed_run_order <-feature_table_long_log2_final %>%
+  mutate(sample_name = fct_reorder(sample_name, run_order)) %>%
+  ggplot(aes(x = sample_name , y = rel_abund, fill = treatment)) +
+  geom_boxplot(alpha = 0.6) +
+  theme_classic(base_size = 12) +
+   theme(
+    legend.position = "right",
+    panel.border = element_rect(color = "black", fill = NA, linewidth = 0.8)  # Adiciona borda completa
+  ) +
+  theme(axis.text.x = element_text(angle = 90)) +
+  scale_fill_manual(values = c("UJ" = "#6A3D9A",
+                                "P76" = "#2E86C1",
+                                "P85" = "#EB984E",
+                                "P95" = "#42846B",
+                                "QC" = "#B2BABB")) +
+  labs(y = "Relative abundance", x = "Sample")
+
+boxplot_log2_transformed_run_order
+```
+
+```{r}
+boxplot <- boxplot_log2_transformed / boxplot_log2_transformed_run_order + plot_annotation(tag_levels = c("A"))
+
+ggsave(plot = boxplot,
+       filename = "Plots/boxplot_final_neg.jpeg", width = 19, height = 19, units = "cm")
+
+ggsave(plot = boxplot,
+       filename = "Plots/boxplot_final_neg.svg")
+```
+
+
+# PCAs 
+
+## With QCs
+
+
+```{r}
+feature_table_wide_log2_final <- feature_table_long_log2_final %>%
+  pivot_wider(names_from = mz_rt,
+              values_from = rel_abund)
+```
+
+
+```{r}
+
+pca_qc <- prcomp(feature_table_wide_log2_final[,-c(1:4)], # remove metadata
+                 scale = FALSE, # we did our own scaling
+                 center = TRUE) # true is the default
+
+summary(pca_qc)
+```
+
+Look at how much variance is explained by each PC.
+```{r}
+importance_qc <- summary(pca_qc)$importance %>%
+  as.data.frame()
+
+head(importance_qc)
+```
+
+Generate a scree plot.
+```{r}
+fviz_eig(pca_qc)
+```
+
+Generate a scores plot (points are samples) quickly with `fviz_pca_ind`.
+```{r}
+fviz_pca_ind(pca_qc)
+```
+
+Make a scores plot but prettier.
+```{r}
+# create a df of pca_qc$x
+scores_UJ_qc <- as.data.frame(pca_qc$x)
+
+# bind meta-data
+scores_qc <- bind_cols(feature_table_wide_log2_final[,1:4], # first 4 columns
+                       scores_UJ_qc)
+```
+
+Plot.
+```{r}
+# create objects indicating percent variance explained by PC1 and PC2
+PC1_percent_qc <- round((importance_qc[2,1])*100, # index 2nd row, 1st column, times 100
+                         1) # round to 1 decimal
+PC2_percent_qc <- round((importance_qc[2,2])*100, 1) 
+
+# plot
+# aes(text) is for setting tooltip with plotly later to indicate hover text
+(scores_qc_plot <- scores_qc %>%
+  ggplot(aes(x = PC1, y = PC2, fill = treatment, text = glue("Sample: {sample_name},
+                                                           Treatment: {treatment}"))) +
+  geom_hline(yintercept = 0, linetype = "dashed") +
+  geom_vline(xintercept = 0, linetype = "dashed") +
+  geom_point(shape = 21, size = 3, color = "black") +
+  theme_classic(base_size = 12) +
+   theme(
+    legend.position = "right",
+    panel.border = element_rect(color = "black", fill = NA, linewidth = 0.8)  # Adiciona borda completa
+  ) +
+    scale_fill_manual(values = c("UJ" = "#6A3D9A",
+                                "P76" = "#2E86C1",
+                                "P85" = "#EB984E",
+                                "P95" = "#42846B",
+                                "QC" = "#B2BABB")) +
+  labs(x = glue("PC1: {PC1_percent_qc}%"), 
+       y = glue("PC2: {PC2_percent_qc}%"), 
+       title = "", tag = "A")) + 
+  coord_cartesian(xlim = c(-20, 20), ylim = c(-10, 10))
+```
+
+```{r}
+ggsave(plot = scores_qc_plot,
+       filename = "Plots/pca_qc_final_neg.jpeg", width = 140, height = 120, units = "mm")
+
+```
+
+Make a loadings plot (points are features) even though it might not be that useful.
+
+```{r}
+fviz_pca_var(pca_qc)
+```
+
+See what I mean? Not that useful. There are some functions in PCAtools that label only the points that most contribute to each PC. Could also do this manually if its of interest.
+
+## Without QCs
+
+```{r}
+feature_table_wide_log2_final_noqc <- feature_table_wide_log2_final %>%
+  filter(sample_or_qc == "Sample")
+
+
+pca_noqc <- prcomp(feature_table_wide_log2_final_noqc[,-c(1:4)], # remove metadata
+                 scale = FALSE, # we did our own scaling
+                 center = TRUE) # true is the default
+
+summary(pca_noqc)
+```
+
+Look at how much variance is explained by each PC.
+
+```{r}
+importance_noqc <- summary(pca_noqc)$importance %>%
+  as.data.frame()
+
+head(importance_noqc)
+```
+
+Generate a scree plot.
+
+```{r}
+fviz_eig(pca_noqc)
+```
+
+Generate a scores plot (points are samples) quickly with `fviz_pca_ind`.
+
+```{r}
+fviz_pca_ind(pca_noqc)
+```
+
+Make a scores plot but prettier.
+
+```{r}
+# create a df of pca_qc$x
+scores_UJ_noqc <- as.data.frame(pca_noqc$x)
+
+# bind meta-data
+scores_noqc <- bind_cols(feature_table_wide_log2_final_noqc[,1:4], # metadata
+                         scores_UJ_noqc)
+```
+
+Plot.
+
+```{r}
+# create objects indicating percent variance explained by PC1 and PC2
+PC1_percent_noqc <- round((importance_noqc[2,1])*100, # index 2nd row, 1st column, times 100
+                         1) # round to 1 decimal
+PC2_percent_noqc <- round((importance_noqc[2,2])*100, 1) 
+
+# plot
+# aes(text) is for setting tooltip with plotly later to indicate hover text
+(scores_noqc_plot <- scores_noqc %>%
+  ggplot(aes(x = PC1, y = PC2, fill = treatment, text = glue("Sample: {sample_name},
+                                                             Treatment: {treatment}"))) +
+  geom_hline(yintercept = 0, linetype = "dashed") +
+  geom_vline(xintercept = 0, linetype = "dashed") +
+  geom_point(shape = 21, size = 3, color = "black") +
+  theme_classic(base_size = 12) +
+   theme(
+    legend.position = "right",
+    panel.border = element_rect(color = "black", fill = NA, linewidth = 0.8)  # Adiciona borda completa
+  ) +
+    scale_fill_manual(values = c("UJ" = "#6A3D9A",
+                                "P76" = "#2E86C1",
+                                "P85" = "#EB984E",
+                                "P95" = "#42846B")) +
+  coord_cartesian(xlim = c(-20, 20), ylim = c(-10, 10)) +
+  labs(x = glue("PC1: {PC1_percent_noqc}%"), 
+       y = glue("PC2: {PC2_percent_noqc}%"), 
+       title = "", tag = "A"))
+```
+
+
+```{r}
+ggsave(plot = scores_noqc_plot,
+       filename = "Plots/pca_noqc_final_neg.jpeg", width = 140, height = 120, units = "mm")
+```
+
+
+Make a loadings plot (points are features) even though it might not be that useful.
+
+```{r}
+fviz_pca_var(pca_noqc)
+```
+
+See what I mean? Not that useful. There are some functions in PCAtools that label only the points that most contribute to each PC. Could also do this manually if its of interest.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# Add annotations
+
+```{r}
+feature_table_long_log2_final <- left_join(feature_table_long_log2_final, annotation, by = "mz_rt")
+  
+unique(feature_table_long_log2_final$Compound)
+```
+```{r}
+feature_table_long_log2_final <- feature_table_long_log2_final %>%
+  mutate(id = if_else(is.na(Compound), as.character(mz_rt), as.character(Compound)))
+  
+```
+
+```{r}
+write_csv(feature_table_long_log2_final,
+          file = "Processed_data/feature_table_long_log2_final_annotated_neg.csv")
+```
+
+# Heatmap of all features
+
+
+```{r}
+# find which features have no variance across samples
+# having samples with no variance won't work for a heatmap
+all_comparisons_novariance <- feature_table_long_log2_final %>%
+  filter(sample_or_qc == "Sample") %>% # samples only
+  dplyr::select(sample_name, treatment, mz_rt, rel_abund, id) %>%
+  group_by(id) %>%
+  summarize(stdev = sd(rel_abund),
+            mean = mean(rel_abund)) %>%
+  filter(stdev == 0)
+
+# what features have no variance?
+all_comparisons_novariance$id
+```
+
+```{r}
+# wrangle
+feature_table_for_heatmap <- feature_table_wide_log2_final %>%
+  filter(sample_or_qc == "Sample") %>% # samples only
+  select(-run_order, -sample_or_qc) %>% # remove columns we don't need
+  column_to_rownames(var = "sample_name") # move the sample names to rownames for plotting
+
+
+```
+
+```{r}
+heatmap <- pheatmap(feature_table_for_heatmap[,-1], # remove treatment column
+         cluster_rows = TRUE, # HCA on samples
+         cluster_cols = TRUE, # HCA on features 
+         scale = "column",
+         clustering_distance_rows = "euclidean",
+         clustering_distance_cols = "euclidean",
+         clustering_method = "ward.D2",
+         legend_breaks = c(-4, 0, 4),
+         legend_labels = c('Low concentration', 'Medium concentration', 'High concentration'),
+         border_color = F,
+         show_colnames = FALSE, # scale for each feature
+         filename = "Plots/heatmap_neg.png")
+```
+
+
+## ANOVA across groups
+
+```{r}
+anova <- feature_table_long_log2_final %>%
+  filter(!sample_or_qc == "QC") %>% # remove QCs
+  dplyr::select(sample_name, treatment, mz_rt, rel_abund) %>%
+  group_by(mz_rt) %>%
+ # Remove grupos onde todos os valores de rel_abund são iguais
+  filter(n_distinct(rel_abund) > 1) %>%
+  anova_test(rel_abund ~ treatment)
+
+# adjust pvalues for multiple testing
+anova_padjusted <- p.adjust(anova$p, method = "BH") %>%
+  as.data.frame() %>%
+  rename(p_adj = 1)
+
+anova_padj <- bind_cols(as.data.frame(anova), anova_padjusted) %>%
+  rename(padj = 9)
+
+# extract out only the significantly different features
+anova_sig <- anova_padj %>%
+  as.data.frame() %>%
+  filter(padj <= 0.05)
+
+# how many features are significantly different between the groups?
+nrow(anova_sig)
+```
+
+# Heatmap of features that are different between groups
+
+```{r}
+feature_table_long_log2_final_anova <- inner_join(feature_table_long_log2_final, anova_sig, by = "mz_rt") %>%
+   select(sample_name, treatment, sample_or_qc, mz_rt, rel_abund, id)
+  
+# unique(feature_table_long_log2_final$id)
+
+```
+
+```{r}
+# find which features have no variance across samples
+# having samples with no variance won't work for a heatmap
+all_comparisons_novariance <- feature_table_long_log2_final_anova %>%
+  filter(sample_or_qc == "Sample") %>% # samples only
+  dplyr::select(sample_name, treatment, mz_rt, rel_abund, id) %>%
+  group_by(id) %>%
+  summarize(stdev = sd(rel_abund),
+            mean = mean(rel_abund)) %>%
+  filter(stdev == 0)
+
+# what features have no variance?
+all_comparisons_novariance$id
+```
+```{r}
+# wrangle
+
+feature_table_wide_log2_final_anova <- feature_table_long_log2_final_anova %>%
+  select(-"id")  %>%
+  pivot_wider(names_from = "mz_rt",
+              values_from = "rel_abund")
+
+
+feature_table_anova_for_heatmap <- feature_table_wide_log2_final_anova %>%
+  filter(sample_or_qc == "Sample") %>% # samples only
+  select(-sample_or_qc) %>% # remove columns we don't need
+  column_to_rownames(var = "sample_name") # move the sample names to rownames for plotting
+
+
+heatmap <- pheatmap(feature_table_anova_for_heatmap[,-1], # remove treatment column
+         cluster_rows = TRUE, # HCA on samples
+         cluster_cols = TRUE, # HCA on features 
+         scale = "column",
+         show_colnames = FALSE, # scale for each feature
+         legend_breaks = c(-4, 0, 4),
+         legend_labels = c('Low concentration', 'Medium concentration', 'High concentration'),
+         border_color = F,
+         filename = "Plots/heatmap_anova_neg.png")
+```
+
+```{r}
+ncol(feature_table_for_heatmap)
+```
+
+
+```{r}
+ncol(feature_table_anova_for_heatmap)
+```
+
+
+# Volcano plots
+
+```{r}
+volcano_function <- function(data, group1, group2, 
+                             padj_threshold = 0.05, 
+                             fc_threshold = 1.0) {
+  
+  # Identify features with zero variance
+  no_variance <- data %>%
+    filter(treatment %in% c(group1, group2)) %>%
+    select(sample_name, treatment, mz_rt, rel_abund) %>%
+    group_by(mz_rt) %>%
+    summarize(
+      stdev = sd(rel_abund, na.rm = TRUE),
+      mean = mean(rel_abund, na.rm = TRUE),
+      .groups = "drop"
+    ) %>%
+    filter(stdev == 0)
+  
+  features_to_remove <- no_variance$mz_rt
+  
+  
+  # Perform t-test for each feature
+  tests <- data %>%
+    filter(treatment %in% c(group1, group2)) %>%
+    filter(!mz_rt %in% features_to_remove) %>%
+    select(sample_name, treatment, mz_rt, rel_abund) %>%
+    group_by(mz_rt) %>%
+    t_test(
+      rel_abund ~ treatment,
+      paired = FALSE,
+      detailed = TRUE
+    ) %>%
+    ungroup() %>%
+    
+    # Benjamini-Hochberg correction across all features
+    mutate(
+      p.adj = p.adjust(p, method = "BH")
+    )
+  
+  
+  # Calculate log2 fold-change
+  fc <- data %>%
+    filter(treatment %in% c(group1, group2)) %>%
+    group_by(treatment, mz_rt) %>%
+    summarize(
+      mean = mean(rel_abund, na.rm = TRUE),
+      .groups = "drop"
+    ) %>%
+    pivot_wider(
+      names_from = treatment,
+      values_from = mean
+    ) %>%
+    mutate(
+      log2_FC = .data[[group1]] - .data[[group2]]
+    )
+  
+  
+  # Merge fold-change and statistical results
+  results <- right_join(fc, tests, by = "mz_rt") %>%
+    mutate(
+      neglog10padj = -log10(p.adj)
+    )
+  
+  
+  # Significant features higher in group 1
+  higher_in_group1 <- results %>%
+    filter(
+      p.adj <= padj_threshold,
+      log2_FC >= fc_threshold
+    )
+  
+  
+  # Significant features higher in group 2
+  higher_in_group2 <- results %>%
+    filter(
+      p.adj <= padj_threshold,
+      log2_FC <= -fc_threshold
+    )
+  
+  
+  # Messages
+  message(
+    "Total significant features (FDR <= ", 
+    padj_threshold, "): ",
+    nrow(results %>% filter(p.adj <= padj_threshold))
+  )
+  
+  message(
+    "Features with >=2-fold higher in ", group1,
+    " (FDR <= ", padj_threshold, "): ",
+    nrow(higher_in_group1)
+  )
+  
+  message(
+    "Features with >=2-fold higher in ", group2,
+    " (FDR <= ", padj_threshold, "): ",
+    nrow(higher_in_group2)
+  )
+  
+  
+  return(
+    list(
+      full_results = results,
+      significant_group1 = higher_in_group1,
+      significant_group2 = higher_in_group2
+    )
+  )
+}
+```
+
+## UJ x P76
+
+
+```{r}
+# Run function
+volcano_UJ_P76 <- volcano_function(data = feature_table_long_log2_final, group1 = "UJ", group2 = "P76")
+
+```
+
+
+Se o menor p.adj da análise é 0.3748, isso significa que nenhuma feature sobreviveu ao FDR. Isso normalmente acontece por um destes motivos:
+- Poucas réplicas biológicas (baixa potência estatística);
+- Muitas features (2171 testes aumentam a penalização);
+- Diferenças pequenas ou variabilidade alta.
+
+```{r}
+volcano_UJ_P76$full_results %>%
+  summarise(
+    min_p = min(p, na.rm = TRUE),
+    min_padj = min(p.adj, na.rm = TRUE),
+    n_sig = sum(p.adj < 0.05, na.rm = TRUE)
+  )
+```
+
+```{r}
+volcano_UJ_P76$full_results %>%
+  select(mz_rt, p, p.adj, log2_FC) %>%
+  arrange(p) %>%
+  slice_head(n = 20)
+```
+
+
+
+```{r}
+volcano_UJ_P76$full_results %>%
+  select(mz_rt, p, p.adj, log2_FC, neglog10padj) %>%
+  arrange(p.adj)
+```
+
+
+```{r}
+(UJ_P76_volcano <- ggplot(
+  volcano_UJ_P76$full_results,
+  aes(x = log2_FC, y = neglog10padj, text = mz_rt)
+) +
+  
+  # All features
+  geom_point() +
+  
+  # Significant features higher in UJ
+  geom_point(
+    data = volcano_UJ_P76$significant_group1,
+    aes(x = log2_FC, y = neglog10padj),
+    color = "tomato3"
+  ) +
+  
+  # Significant features higher in P76
+  geom_point(
+    data = volcano_UJ_P76$significant_group2,
+    aes(x = log2_FC, y = neglog10padj),
+    color = "royalblue4"
+  ) +
+  
+  # Threshold lines
+  geom_hline(
+    yintercept = -log10(0.05),
+    linetype = "dashed"
+  ) +
+  
+  geom_vline(
+    xintercept = -1,
+    linetype = "dashed"
+  ) +
+  
+  geom_vline(
+    xintercept = 1,
+    linetype = "dashed"
+  ) +
+  
+  # X-axis limits
+  coord_cartesian(
+    xlim = c(-2, 2)
+  ) +
+  
+  # Same formatting as Code 2
+  theme_classic(base_size = 8) +
+  
+  theme(
+    panel.border = element_rect(
+      color = "black",
+      fill = NA,
+      linewidth = 0.8
+    )
+  ) +
+  
+  # Labels
+  labs(
+    x = expression(Log[2]~"(fold change)"),
+    y = expression(-Log[10]~"(adjusted p-value)"),
+    title = "UJ vs P76",
+    tag = "A"
+  )
+)
+```
+
+Saving volcano plot
+
+```{r}
+ggsave(plot = UJ_P76_volcano,
+       filename = "Plots/UJ_P76_volcano_neg.svg", width = 190, height = 110, units = "mm")
+```
+
+
+## UJ x P85
+
+```{r}
+# Run function
+volcano_UJ_P85 <- volcano_function(
+  data = feature_table_long_log2_final,
+  group1 = "UJ",
+  group2 = "P85"
+)
+```
+
+
+
+```{r}
+volcano_UJ_P85$full_results %>%
+  select(mz_rt, p, p.adj, log2_FC, neglog10padj) %>%
+  arrange(p.adj)
+```
+
+```{r}
+(UJ_P85_volcano <- ggplot(
+  volcano_UJ_P85$full_results,
+  aes(x = log2_FC, y = neglog10padj, text = mz_rt)
+) +
+  
+  # All features
+  geom_point() +
+  
+  # Significant features higher in UJ
+  geom_point(
+    data = volcano_UJ_P85$significant_group1,
+    aes(x = log2_FC, y = neglog10padj),
+    color = "tomato3"
+  ) +
+  
+  # Significant features higher in P85
+  geom_point(
+    data = volcano_UJ_P85$significant_group2,
+    aes(x = log2_FC, y = neglog10padj),
+    color = "royalblue4"
+  ) +
+  
+  # Threshold lines
+  geom_hline(
+    yintercept = -log10(0.05),
+    linetype = "dashed"
+  ) +
+  
+  geom_vline(
+    xintercept = -1,
+    linetype = "dashed"
+  ) +
+  
+  geom_vline(
+    xintercept = 1,
+    linetype = "dashed"
+  ) +
+  
+  # X-axis limits
+  coord_cartesian(
+    xlim = c(-2, 2)
+  ) +
+  
+  # Formatting
+  theme_classic(base_size = 8) +
+  
+  theme(
+    panel.border = element_rect(
+      color = "black",
+      fill = NA,
+      linewidth = 0.8
+    )
+  ) +
+  
+  # Labels
+  labs(
+    x = expression(Log[2]~"(fold change)"),
+    y = expression(-Log[10]~"(adjusted p-value)"),
+    title = "UJ vs P85",
+    tag = "B"
+  )
+)
+```
+
+
+```{r}
+ggsave(
+  plot = UJ_P85_volcano,
+  filename = "Plots/UJ_P85_volcano_neg.svg",
+  width = 190,
+  height = 110,
+  units = "mm"
+)
+```
+
+
+## UJ x P95
+
+```{r}
+# Run function
+volcano_UJ_P95 <- volcano_function(
+  data = feature_table_long_log2_final,
+  group1 = "UJ",
+  group2 = "P95"
+)
+```
+
+
+
+```{r}
+# View results
+volcano_UJ_P95$full_results %>%
+  select(mz_rt, p, p.adj, log2_FC, neglog10padj) %>%
+  arrange(p.adj)
+```
+
+
+```{r}
+# Volcano plot
+
+(UJ_P95_volcano <- ggplot(
+  volcano_UJ_P95$full_results,
+  aes(x = log2_FC, y = neglog10padj, text = mz_rt)
+) +
+  
+  # All features
+  geom_point() +
+  
+  # Significant features higher in UJ
+  geom_point(
+    data = volcano_UJ_P95$significant_group1,
+    aes(x = log2_FC, y = neglog10padj),
+    color = "tomato3"
+  ) +
+  
+  # Significant features higher in P95
+  geom_point(
+    data = volcano_UJ_P95$significant_group2,
+    aes(x = log2_FC, y = neglog10padj),
+    color = "royalblue4"
+  ) +
+  
+  # Threshold lines
+  geom_hline(
+    yintercept = -log10(0.05),
+    linetype = "dashed"
+  ) +
+  
+  geom_vline(
+    xintercept = -1,
+    linetype = "dashed"
+  ) +
+  
+  geom_vline(
+    xintercept = 1,
+    linetype = "dashed"
+  ) +
+  
+  # X-axis limits
+  coord_cartesian(
+    xlim = c(-2, 2)
+  ) +
+  
+  # Formatting
+  theme_classic(base_size = 8) +
+  
+  theme(
+    panel.border = element_rect(
+      color = "black",
+      fill = NA,
+      linewidth = 0.8
+    )
+  ) +
+  
+  # Labels
+  labs(
+    x = expression(Log[2]~"(fold change)"),
+    y = expression(-Log[10]~"(adjusted p-value)"),
+    title = "UJ vs P95",
+    tag = "C"
+  )
+)
+```
+
+
+```{r}
+ggsave(
+  plot = UJ_P95_volcano,
+  filename = "Plots/UJ_P95_volcano_neg.svg",
+  width = 190,
+  height = 110,
+  units = "mm"
+)
+```
+
+## P76 x P85
+
+```{r}
+# Run function
+volcano_P76_P85 <- volcano_function(
+  data = feature_table_long_log2_final,
+  group1 = "P76",
+  group2 = "P85"
+)
+```
+
+
+```{r}
+# View results
+volcano_P76_P85$full_results %>%
+  select(mz_rt, p, p.adj, log2_FC, neglog10padj) %>%
+  arrange(p.adj)
+```
+
+```{r}
+# Volcano plot
+
+(P76_P85_volcano <- ggplot(
+  volcano_P76_P85$full_results,
+  aes(x = log2_FC, y = neglog10padj, text = mz_rt)
+) +
+  
+  # All features
+  geom_point() +
+  
+  # Significant features higher in P76
+  geom_point(
+    data = volcano_P76_P85$significant_group1,
+    aes(x = log2_FC, y = neglog10padj),
+    color = "tomato3"
+  ) +
+  
+  # Significant features higher in P85
+  geom_point(
+    data = volcano_P76_P85$significant_group2,
+    aes(x = log2_FC, y = neglog10padj),
+    color = "royalblue4"
+  ) +
+  
+  # Threshold lines
+  geom_hline(
+    yintercept = -log10(0.05),
+    linetype = "dashed"
+  ) +
+  
+  geom_vline(
+    xintercept = -1,
+    linetype = "dashed"
+  ) +
+  
+  geom_vline(
+    xintercept = 1,
+    linetype = "dashed"
+  ) +
+  
+  # X-axis limits
+  coord_cartesian(
+    xlim = c(-2, 2)
+  ) +
+  
+  # Formatting
+  theme_classic(base_size = 8) +
+  
+  theme(
+    panel.border = element_rect(
+      color = "black",
+      fill = NA,
+      linewidth = 0.8
+    )
+  ) +
+  
+  # Labels
+  labs(
+    x = expression(Log[2]~"(fold change)"),
+    y = expression(-Log[10]~"(adjusted p-value)"),
+    title = "P76 vs P85"
+  )
+)
+```
+
+
+```{r}
+ggsave(
+  plot = P76_P85_volcano,
+  filename = "Plots/P76_P85_volcano_neg.svg",
+  width = 190,
+  height = 110,
+  units = "mm"
+)
+```
+
+
+
+## P85 x P95
+
+```{r}
+# Run function
+volcano_P85_P95 <- volcano_function(
+  data = feature_table_long_log2_final,
+  group1 = "P85",
+  group2 = "P95"
+)
+```
+
+
+
+```{r}
+# View results
+volcano_P85_P95$full_results %>%
+  select(mz_rt, p, p.adj, log2_FC, neglog10padj) %>%
+  arrange(p.adj)
+```
+
+
+```{r}
+# Volcano plot
+
+(P85_P95_volcano <- ggplot(
+  volcano_P85_P95$full_results,
+  aes(x = log2_FC, y = neglog10padj, text = mz_rt)
+) +
+  
+  # All features
+  geom_point() +
+  
+  # Significant features higher in P85
+  geom_point(
+    data = volcano_P85_P95$significant_group1,
+    aes(x = log2_FC, y = neglog10padj),
+    color = "tomato3"
+  ) +
+  
+  # Significant features higher in P95
+  geom_point(
+    data = volcano_P85_P95$significant_group2,
+    aes(x = log2_FC, y = neglog10padj),
+    color = "royalblue4"
+  ) +
+  
+  # Threshold lines
+  geom_hline(
+    yintercept = -log10(0.05),
+    linetype = "dashed"
+  ) +
+  
+  geom_vline(
+    xintercept = -1,
+    linetype = "dashed"
+  ) +
+  
+  geom_vline(
+    xintercept = 1,
+    linetype = "dashed"
+  ) +
+  
+  # X-axis limits
+  coord_cartesian(
+    xlim = c(-2, 2)
+  ) +
+  
+  # Formatting
+  theme_classic(base_size = 8) +
+  
+  theme(
+    panel.border = element_rect(
+      color = "black",
+      fill = NA,
+      linewidth = 0.8
+    )
+  ) +
+  
+  # Labels
+  labs(
+    x = expression(Log[2]~"(fold change)"),
+    y = expression(-Log[10]~"(adjusted p-value)"),
+    title = "P85 vs P95",
+    tag = "C"
+  )
+)
+```
+
+
+```{r}
+ggsave(
+  plot = P85_P95_volcano,
+  filename = "Plots/P85_P95_volcano_neg.svg",
+  width = 190,
+  height = 110,
+  units = "mm"
+)
+```
+
+
+

@@ -1,0 +1,260 @@
+Import MS data
+File names:	[/users/PAS1640/mercali/Documents/Caroline 0- suco - Química 4/Negative mode/P_76_1.mzML, /users/PAS1640/mercali/Documents/Caroline 0- suco - Química 4/Negative mode/P_76_2.mzML, /users/PAS1640/mercali/Documents/Caroline 0- suco - Química 4/Negative mode/P_76_3.mzML, /users/PAS1640/mercali/Documents/Caroline 0- suco - Química 4/Negative mode/P_76_4.mzML, /users/PAS1640/mercali/Documents/Caroline 0- suco - Química 4/Negative mode/P_85_1.mzML, /users/PAS1640/mercali/Documents/Caroline 0- suco - Química 4/Negative mode/P_85_2.mzML, /users/PAS1640/mercali/Documents/Caroline 0- suco - Química 4/Negative mode/P_85_3.mzML, /users/PAS1640/mercali/Documents/Caroline 0- suco - Química 4/Negative mode/P_85_4.mzML, /users/PAS1640/mercali/Documents/Caroline 0- suco - Química 4/Negative mode/P_95_1.mzML, /users/PAS1640/mercali/Documents/Caroline 0- suco - Química 4/Negative mode/P_95_2.mzML, /users/PAS1640/mercali/Documents/Caroline 0- suco - Química 4/Negative mode/P_95_3.mzML, /users/PAS1640/mercali/Documents/Caroline 0- suco - Química 4/Negative mode/P_95_4.mzML, /users/PAS1640/mercali/Documents/Caroline 0- suco - Química 4/Negative mode/P_C_1.mzML, /users/PAS1640/mercali/Documents/Caroline 0- suco - Química 4/Negative mode/P_C_2.mzML, /users/PAS1640/mercali/Documents/Caroline 0- suco - Química 4/Negative mode/P_C_3.mzML, /users/PAS1640/mercali/Documents/Caroline 0- suco - Química 4/Negative mode/P_C_4.mzML, /users/PAS1640/mercali/Documents/Caroline 0- suco - Química 4/Negative mode/ProcessBlank1.mzML, /users/PAS1640/mercali/Documents/Caroline 0- suco - Química 4/Negative mode/ProcessBlank2.mzML, /users/PAS1640/mercali/Documents/Caroline 0- suco - Química 4/Negative mode/QC1.mzML, /users/PAS1640/mercali/Documents/Caroline 0- suco - Química 4/Negative mode/QC2.mzML, /users/PAS1640/mercali/Documents/Caroline 0- suco - Química 4/Negative mode/QC3.mzML, /users/PAS1640/mercali/Documents/Caroline 0- suco - Química 4/Negative mode/QC4.mzML, /users/PAS1640/mercali/Documents/Caroline 0- suco - Química 4/Negative mode/QC5.mzML, /users/PAS1640/mercali/Documents/Caroline 0- suco - Química 4/Negative mode/QC6.mzML, /users/PAS1640/mercali/Documents/Caroline 0- suco - Química 4/Negative mode/QC7.mzML, /users/PAS1640/mercali/Documents/Caroline 0- suco - Química 4/Negative mode/QC8.mzML]
+Advanced import:	false
+	Scan filters:	All MS levels, Polarity (Any), Spectrum type (ANY), Scan definition () 
+	Scan number:	<not set>
+	Base Filtering Integer:	<not set>
+	Retention time:	<not set>
+	Mobility:	<not set>
+	MS level filter:	All MS levels
+	Scan definition:	
+	Polarity:	Any
+	Spectrum type:	ANY
+	Crop MS1 m/z:	false	(null)
+	MS1 detector (Advanced):	false	(Factor of lowest signal)
+	MS2 detector (Advanced):	false	(Factor of lowest signal)
+	Denormalize fragment scans (traps):	false
+Metadata file:	false	(null)
+Spectral library files:	[]
+
+Mass detection
+Raw data files:	P_85_3.mzML
+QC2.mzML
+P_C_2.mzML
+P_76_4.mzML
+QC3.mzML
+P_76_3.mzML
+P_95_2.mzML
+P_95_3.mzML
+P_95_1.mzML
+P_76_2.mzML
+QC5.mzML
+P_76_1.mzML
+P_C_4.mzML
+QC6.mzML
+P_C_3.mzML
+ProcessBlank1.mzML
+QC8.mzML
+P_C_1.mzML
+QC7.mzML
+P_85_1.mzML
+P_85_2.mzML
+QC1.mzML
+QC4.mzML
+P_95_4.mzML
+P_85_4.mzML
+ProcessBlank2.mzML
+Scan filters:	MS1, level = 1, Polarity (Any), Spectrum type (ANY), Scan definition () 
+	Scan number:	<not set>
+	Base Filtering Integer:	<not set>
+	Retention time:	<not set>
+	Mobility:	<not set>
+	MS level filter:	MS1, level = 1
+	Scan definition:	
+	Polarity:	Any
+	Spectrum type:	ANY
+Scan types (IMS):	All scan types
+Denormalize fragment scans (traps):	false
+Mass detector:	Auto
+	Noise level:	110.0
+
+Chromatogram builder
+Raw data files:	P_85_3.mzML
+QC2.mzML
+P_C_2.mzML
+P_76_4.mzML
+QC3.mzML
+P_76_3.mzML
+P_95_2.mzML
+P_95_3.mzML
+P_95_1.mzML
+P_76_2.mzML
+QC5.mzML
+P_76_1.mzML
+P_C_4.mzML
+QC6.mzML
+P_C_3.mzML
+ProcessBlank1.mzML
+QC8.mzML
+P_C_1.mzML
+QC7.mzML
+P_85_1.mzML
+P_85_2.mzML
+QC1.mzML
+QC4.mzML
+P_95_4.mzML
+P_85_4.mzML
+ProcessBlank2.mzML
+Scan filters:	MS1, level = 1, Polarity (Any), Spectrum type (ANY), Scan definition () 
+	Scan number:	<not set>
+	Base Filtering Integer:	<not set>
+	Retention time:	<not set>
+	Mobility:	<not set>
+	MS level filter:	MS1, level = 1
+	Scan definition:	
+	Polarity:	Any
+	Spectrum type:	ANY
+Minimum consecutive scans:	5
+Minimum intensity for consecutive scans:	330.0
+Minimum absolute height:	770.0
+m/z tolerance (scan-to-scan):	0.0 m/z or 12.0 ppm
+Suffix:	chromatograms
+Allow single scan chromatograms:	{}
+
+Local minimum feature resolver
+Feature lists:	
+Suffix:	resolved
+Original feature list:	KEEP
+MS/MS scan pairing:	false
+	MS1 to MS2 precursor tolerance (m/z):	0.01 m/z or 10.0 ppm
+	Retention time filter:	RtLimitsFilter[filter=Use feature edges, rtTolerance=0.2 minutes]
+	Minimum relative feature height:	true	(0.25)
+	Minimum required signals:	true	(1)
+	Limit by ion mobility edges:	false
+	Merge MS/MS spectra (TIMS):	false
+	Minimum signal intensity (absolute, TIMS):	false	(250.0)
+	Minimum signal intensity (relative, TIMS):	true	(0.01)
+Dimension:	Retention time
+Chromatographic threshold:	0.9
+Minimum search range RT/Mobility (absolute):	0.05
+Minimum relative height:	0.0
+Minimum absolute height:	770.0
+Min ratio of peak top/edge:	2.0
+Peak duration range (min/mobility):	[0.01..0.3]
+Minimum scans (data points):	5
+
+Filtering feature list rows
+Feature lists:	
+Name suffix:	filtered_retention_time
+Minimum aligned features (samples):	false	(abs=1 and rel=0)
+Minimum features in an isotope pattern:	false	(2)
+Validate 13C isotope pattern:	false
+	m/z tolerance:	5.0E-4 m/z or 10.0 ppm
+	Max charge:	1
+	Estimate minimum carbon:	true
+	Remove if 13C:	true
+	Exclude isotopes:	[Element(723949589, S:H, AN:1), Element(1377198648, S:C, AN:6), Element(1150428375, S:N, AN:7), Element(2068732976, S:O, AN:8), Element(1681364348, S:S, AN:16), Element(723949589, S:H, AN:1), Element(1377198648, S:C, AN:6), Element(1150428375, S:N, AN:7), Element(2068732976, S:O, AN:8), Element(1681364348, S:S, AN:16)]
+Remove redundant isotope rows:	false
+m/z:	false	(null)
+Retention time:	true	([0.25..9.0])
+features duration range:	false	([0.0..3.0])
+Chromatographic FWHM:	false	([0.0..1.0])
+Charge:	false	([1..2])
+Kendrick mass defect:	false
+	Kendrick mass defect:	[0.0..1.0]
+	Kendrick mass base:	
+	Shift:	0.0
+	Charge:	1
+	Divisor:	1
+	Use Remainder of Kendrick mass:	false
+Parameter:	No parameters defined
+Only identified?:	false
+Text in identity:	false	()
+Text in comment:	false	()
+Keep or remove rows:	Keep rows that match all criteria
+Feature with MS2 scan:	false
+Never remove feature with MS2:	true
+Never remove annotated rows:	false
+Reset the feature number ID:	false
+Mass defect:	false	(null)
+Original feature list:	KEEP
+
+13C isotope filter (formerly: isotope grouper)
+Feature lists:	
+Name suffix:	deisotoped
+m/z tolerance (intra-sample):	0.0 m/z or 12.0 ppm
+Retention time tolerance:	0.05 minutes
+Mobility tolerance:	false	(null)
+Monotonic shape:	false
+Maximum charge:	2
+Representative isotope:	Most intense
+Never remove feature with MS2:	true
+Original feature list:	KEEP
+
+Isotope finder module
+Feature lists:	
+Chemical elements:	[Element(2122364187, S:H, AN:1), Element(2067611895, S:C, AN:6), Element(1656911592, S:N, AN:7), Element(187395462, S:O, AN:8), Element(1895311765, S:S, AN:16)]
+m/z tolerance (feature-to-scan):	0.0 m/z or 12.0 ppm
+Maximum charge of isotope m/z:	2
+Search in scans:	SINGLE MOST INTENSE
+
+Join aligner
+Feature lists:	
+Feature list name:	Aligned feature list
+m/z tolerance (sample-to-sample):	0.0 m/z or 12.0 ppm
+Weight for m/z:	75.0
+Retention time tolerance:	0.1 minutes
+Weight for RT:	25.0
+Mobility tolerance:	false	(null)
+Mobility weight:	0.0
+Require same charge state:	false
+Require same ID:	false
+Compare isotope pattern:	false
+	Isotope m/z tolerance:	0.002 m/z or 5.0 ppm
+	Minimum absolute intensity:	0.0
+	Minimum score:	0.0
+Compare spectra similarity:	false
+	Spectral m/z tolerance:	0.001 m/z or 10.0 ppm
+	MS level:	2
+	Compare spectra similarity:	Weighted cosine similarity
+	Weights:	MassBank (mz^2 * I^0.5)
+	Minimum  cos similarity:	0.7
+	Handle unmatched signals:	KEEP ALL AND MATCH TO ZERO
+Original feature list:	KEEP
+
+Gap filling 
+Feature lists:	
+Name suffix:	gap-filled
+Intensity tolerance:	0.2
+m/z tolerance (sample-to-sample):	0.0 m/z or 12.0 ppm
+Retention time tolerance:	0.1 minutes
+RT correction:	false
+Parallel (never combined with RT correction):	false
+Original feature list:	KEEP
+
+Filtering feature list rows
+Feature lists:	
+Name suffix:	filtered_isotopes
+Minimum aligned features (samples):	false	(abs=1 and rel=0)
+Minimum features in an isotope pattern:	true	(2)
+Validate 13C isotope pattern:	false
+	m/z tolerance:	5.0E-4 m/z or 10.0 ppm
+	Max charge:	1
+	Estimate minimum carbon:	true
+	Remove if 13C:	true
+	Exclude isotopes:	[Element(89209952, S:H, AN:1), Element(1353716865, S:C, AN:6), Element(1503030651, S:N, AN:7), Element(30580544, S:O, AN:8), Element(233574694, S:S, AN:16)]
+Remove redundant isotope rows:	false
+m/z:	false	(null)
+Retention time:	false	(null)
+features duration range:	false	([0.0..3.0])
+Chromatographic FWHM:	false	([0.0..1.0])
+Charge:	false	([1..2])
+Kendrick mass defect:	false
+	Kendrick mass defect:	[0.0..1.0]
+	Kendrick mass base:	
+	Shift:	0.0
+	Charge:	1
+	Divisor:	1
+	Use Remainder of Kendrick mass:	false
+Parameter:	No parameters defined
+Only identified?:	false
+Text in identity:	false	()
+Text in comment:	false	()
+Keep or remove rows:	Keep rows that match all criteria
+Feature with MS2 scan:	false
+Never remove feature with MS2:	true
+Never remove annotated rows:	false
+Reset the feature number ID:	false
+Mass defect:	false	(null)
+Original feature list:	KEEP
+
+Duplicate feature list rows filter
+Feature lists:	
+Name suffix:	filtered
+Filter mode:	NEW AVERAGE
+m/z tolerance:	0.0 m/z or 12.0 ppm
+RT tolerance:	0.1 minutes
+Mobility tolerance:	false	(Mobility tolerance: 0.008)
+Require same identification:	false
+Original feature list:	KEEP
+
